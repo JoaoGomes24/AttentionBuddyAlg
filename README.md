@@ -18,7 +18,7 @@ Our project innovatively adapts the "Real Time Driver State Detection" system, f
    pip install opencv-python numpy mediapipe gtts pydub PyQT5
 
 2. **Prepare ELMO V2 Robot:**
-    * Follow the Elmo Guide provided in the course to set up the ELMO robot
+    * Follow the Elmo Guide provided in the course to set up the ELMO robot(Also in the zip submitted by us)
     * Ensure the ELMO robot is connected to the same network as your computer via Ethernet.
     * Finaly you need to know ELMO IP address, in our case it was "192.168.0.102"
 
