@@ -10,6 +10,11 @@ from Eye_Dector_Module import EyeDetector as EyeDet
 from Pose_Estimation_Module import HeadPoseEstimator as HeadPoseEst
 from Attention_Scorer_Module import AttentionScorer as AttScorer
 
+import sys
+sys.path.append('elmo-v2/src')  # Add the directory containing elmo_test.py to the Python path
+
+import elmo_test 
+
 # camera matrix obtained from the camera calibration script, using a 9x6 chessboard
 camera_matrix = np.array(
     [[899.12150372, 0., 644.26261492],
@@ -43,6 +48,16 @@ def _get_landmarks(lms):
 
 
 def main():
+
+    var = 1
+    test = 0
+    test1 = 0
+    test2 = 0
+    test3 = 0
+    test4 = 0
+    times = 0
+
+
 
     parser = argparse.ArgumentParser(description='Driver State Detection')
 
@@ -218,22 +233,69 @@ def main():
                 cv2.putText(frame, "yaw:"+str(yaw.round(1)[0]), (450, 100),
                             cv2.FONT_HERSHEY_PLAIN, 1.5, (255, 0, 255), 1, cv2.LINE_AA)
             
+            if(test4 == 0):
+                     elmo_test.main("192.168.0.102", 0)
+                     time.sleep(2)  # Add a delay of 2 seconds
+                     test4+=1
 
             # if the driver is tired, show and alert on screen
             if tired:
                 cv2.putText(frame, "TIRED!", (10, 280),
                             cv2.FONT_HERSHEY_PLAIN, 1, (0, 0, 255), 1, cv2.LINE_AA)
+                if(test == 0):
+                    times+=1
+                    elmo_test.main("192.168.0.102", var)
+                    time.sleep(2)  # Add a delay of 2 seconds
+                    test+=1
+                    var+=1
+                    if(var == 11):
+                        var = 1
+                
 
             # if the state of attention of the driver is not normal, show an alert on screen
-            if asleep:
+            elif asleep:
                 cv2.putText(frame, "ASLEEP!", (10, 300),
                             cv2.FONT_HERSHEY_PLAIN, 1, (0, 0, 255), 1, cv2.LINE_AA)
-            if looking_away:
+                if(test1 == 0):
+                    times+=1
+                    elmo_test.main("192.168.0.102", var)
+                    time.sleep(2)  # Add a delay of 2 seconds
+                    test1+=1
+                    var+=1
+                    if(var == 11):
+                        var = 1             
+
+            elif looking_away:
                 cv2.putText(frame, "LOOKING AWAY!", (10, 320),
                             cv2.FONT_HERSHEY_PLAIN, 1, (0, 0, 255), 1, cv2.LINE_AA)
-            if distracted:
+                if(test2 == 0):
+                    times+=1
+                    elmo_test.main("192.168.0.102", var)
+                    time.sleep(2)  # Add a delay of 2 seconds
+                    test2+=1
+                    var+=1
+                    if(var == 11):
+                        var = 1
+
+            elif distracted:
                 cv2.putText(frame, "DISTRACTED!", (10, 340),
                             cv2.FONT_HERSHEY_PLAIN, 1, (0, 0, 255), 1, cv2.LINE_AA)
+                if(test3 == 0):
+                    times+=1
+                    elmo_test.main("192.168.0.102", var)
+                    time.sleep(2)  # Add a delay of 2 seconds
+                    test3+=1
+                    var+=1
+                    if(var == 11):
+                        var = 1
+            else:
+                test = 0
+                test1 = 0
+                test2 = 0
+                test3 = 0
+                
+                
+        cv2.putText(frame, f"Distractions: {times}", (10, 460), cv2.FONT_HERSHEY_PLAIN, 2, (0, 0, 255), 1)
 
         # stop the tick counter for computing the processing time for each frame
         e2 = cv2.getTickCount()
@@ -255,7 +317,7 @@ def main():
             break
         
         i += 1
-    
+    print("The participant was distracted", times, "times")
     cap.release()
     cv2.destroyAllWindows()
 
