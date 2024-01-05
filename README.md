@@ -1,137 +1,350 @@
-# Real Time Driver State Detection
-![Python](https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54)  ![OpenCV](https://img.shields.io/badge/opencv-%23white.svg?style=for-the-badge&logo=opencv&logoColor=white) 
-
-Real time, webcam based, driver attention state detection and monitoring using Python with the OpenCV and mediapipe libraries.
+# Elmo V2
 
 
-![driver state detection demo](https://user-images.githubusercontent.com/67196406/173455413-ba95db40-6be5-4d64-9a1d-6c998854130e.gif)
+![alt text](media/cute_elmo_v2.jpg)
 
 
-**Note**:
-This work is partially based on [this paper](https://www.researchgate.net/publication/327942674_Vision-Based_Driver%27s_Attention_Monitoring_System_for_Smart_Vehicles) for the scores and methods used.
+Develop applications for IDMind's tabletop robot Elmo.
 
-## Mediapipe Update
-Thanks to the awesome contribution of [MustafaLotfi](https://github.com/MustafaLotfi), now the script uses the better performing and accurate face keypoints detection model from the [Google Mediapipe library](https://github.com/google/mediapipe).
+This repository contains the source code installed on the robot. There are significant changes from this version to the first. Read on to know more.
 
-### Features added:
-- 478 face keypoints detection
-- Direct iris keypoint detection for gaze score estimation
-- Improved head pose estimation using the dynamical canonical face model
-- Fixed euler angles function and wrong returned values
-- Using time variables to make the code more modular and machine agnostic
+Elmo runs on a Raspberry PI 4, running Raspberry PI OS Bullseye and is developed almost exclusively using Python 3.9.
 
-**NOTE**: the old mediapipe version can still be found in the "dlib-based" repository branch.
+Although there is a REST API that allows for some low level control, users are advised to also use Python 3 for application development.
 
-## How Does It Work?
+We believe Elmo has the necessary hardware to allow for engaging interactions with people in several domains, including Edutainment, HRI research and commercial applications.
 
-This script searches for the driver face, then use the mediapipe library to predict 478 face and iris keypoints.
-The enumeration and location of all the face keypoints/landmarks can be seen [here](https://github.com/e-candeloro/Driver-State-Detection/blob/master/docs/5Mohl.jpg).
+## Hardware
 
-With those keypoints, the following scores are computed:
+- Power Button
+- Ethernet Port
+- Microphone
+- 13x13 Led Matrix
+- Capacitive touch sensors (1 in chest, 4 in head)
+- 2 servo motors for head movement (pan and tilt)
+- Touchscreen (face)
+- RGB Camera
+- Battery
 
-- **EAR**: Eye Aspect Ratio, it's the normalized average eyes aperture, and it's used to see how much the eyes are opened or closed
-- **Gaze Score**: L2 Norm (Euclidean distance) between the center of the eye and the pupil, it's used to see if the driver is looking away or not
-- **Head Pose**: Roll, Pitch and Yaw of the head of the driver. The angles are used to see if the driver is not looking straight ahead or doesn't have a straight head pose (is probably unconscious)
-- **PERCLOS**: PERcentage of CLOSure eye time, used to see how much time the eyes are closed in a minute. A threshold of 0.2 is used in this case (20% of a minute) and the EAR score is used to estimate when the eyes are closed.
+## First usage
 
-The driver states can be classified as:
-- **Normal**: no messages are printed
-- **Tired**: when the PERCLOS score is > 0.2, a warning message is printed on screen
-- **Asleep**: when the eyes are closed (EAR < closure_threshold) for a certain amount of time, a warning message is printed on screen
-- **Looking Away**: when the gaze score is higher than a certain threshold for a certain amount of time, a warning message is printed on screen
-- **Distracted**: when the head pose score is higher than a certain threshold for a certain amount of time, a warning message is printed on screen
+After receiving Elmo, place the robot on a steady surface and hold the power button for 3 seconds. The green power LED should light up as soon as the button is pressed and stay lit after the user releases it. If the LED does not light up, then the robot is out of battery and the provided power supply should be plugged in. If the LED lights up but does not stay lit, then the button needs to be held for a bit more time. Wait for the robot to finish booting.
 
-## Demo
-MEDIAPIPE DEMO COMING SOON
+After the robot finishes the boot process, the IDMind logo should show on the LED matrix, the head will start movement and the robot's eyes will appear.
 
-OLD DEMO:
+The user can also test the capacitive touch sensors by petting the robot on the head.
 
-https://user-images.githubusercontent.com/67196406/121312501-bb571d00-c905-11eb-8d25-1cd28efc9110.mp4
+To shutdown the robot, hold the power button for 3 seconds.
 
-## The Scores Explained
+By plugging an Ethernet cable to the robot, you will be able to access the robot remotely, using the companion app.
 
-### EAR
-**Eye Aspect Ratio** is a normalized score that is useful to understand the rate of aperture of the eyes.
-Using the mediapipe face mesh keypoints for each eye (six for each), the eye lenght and width are estimated and using this data the EAR score is computed as explained in the image below:
-![EAR](https://user-images.githubusercontent.com/67196406/121489162-18210900-c9d4-11eb-9d2e-765f5ac42286.png)
+## Companion App
 
-**NOTE:** the average of the two eyes EAR score is computed
+In this repository, under `app/` is the source code for Elmo's companion app. The app was developed using PyQT5 and QTDesigner, under Ubuntu 18.04. You can run the app using the `app/dev.sh` script, or build the application using `app/build.sh`. Resolve dependencies as they appear, using pip.
+
+Alternatively, you can request a prebuilt version by email.
+
+The Companion App will attempt to discover any Elmos on the network using UDP broadcast. After finding your Elmo, you can click the button to connect to it and use the application to explore and test different functionalities of the robot. 
+
+Also, take note of the robot's IP, since you will probably want to SSH into it for development, at some time.
+
+The App communicates with Elmo via a REST API, which is also a decent way to control the robot.
+
+## REST API
+
+The REST API is served by the robot via http at port 8001. Below is a description of the available methods.
+
+---
+
+[GET] http://<robot_ip>:8001/status 
+ - Query the robot's status
+
+ Body: 
+ 
+    {
+
+    }
+
+ Example reply:
+
+    {
+        "battery": 15.9016345,
+        "behaviour_blush": false,
+        "behaviour_look_around": true,
+        "icon_list": [
+            "call.png",
+            "heartbeat.gif",
+            "elmo_idm.png",
+            "music.png"
+        ],
+        "image_list": [
+            "thinking.png",
+            "love.png",
+            "normal.png",
+            "cute_elmo.jpg",
+            "background_black.png",
+            "tears.png"
+        ],
+        "microphone_is_recording": false,
+        "multimedia_port": 8000,
+        "pan": -32.87461773700305,
+        "pan_max": 40,
+        "pan_min": -40,
+        "pan_temperature": 168,
+        "pan_torque": true,
+        "recognized_speech": "do you like Alexa",
+        "sound_list": [
+            "mic.wav",
+            "correct.wav",
+            "love.wav"
+        ],
+        "tilt": -7.186544342507659,
+        "tilt_max": 15,
+        "tilt_min": -15,
+        "tilt_temperature": 169,
+        "tilt_torque": true,
+        "touch_chest": false,
+        "touch_head_e": false,
+        "touch_head_n": false,
+        "touch_head_s": false,
+        "touch_head_w": false,
+        "video_list": [
+            "eyes_green_all.mp4"
+        ],
+        "volume": 18
+    }
 
 
-### Gaze Score Estimation
-The gaze score gives information about how much the driver is looking away without turning his head.
+---
 
-To understand this, the distance between the eye center and the position of the pupil is computed. The result is then normalized by the eye width that can be different depending on the driver physionomy and distance from the camera.
+[POST] http://<robot_ip>:8001/command 
+ - Send a command to the robot
 
-The below image explains graphically how the Gaze Score for a single eye is computed:
-![Gaze Score](https://user-images.githubusercontent.com/67196406/121489746-ab5a3e80-c9d4-11eb-8f33-d34afd0947b4.png)
-**NOTE:** the average of the two eyes Gaze Score is computed
+Body: 
+ 
+    {
+        "op": <operation>
+        "<param1>": <value1> 
+    }
+
+Reply:
+
+    {
+        "success": <true or false>,
+        "message": <OK or error description>
+    }
 
 
-### Head Pose Estimation
-For the head pose estimation, a standard 3d head model in world coordinates was considered, in combination of the respective face mesh keypoints in the image plane. 
-In this way, using the solvePnP function of OpenCV, estimating the rotation and translation vector of the head in respect to the camera is possible.
-Then the 3 Euler angles are computed.
+You choose the operation by passing the appropriate value for `op` and any additional parameters required.
 
-The partial snippets of code used for this task can be found in [this article](https://learnopencv.com/head-pose-estimation-using-opencv-and-dlib/).
+As an example, to disable the `blush` behaviour, which is the robot's reaction to pets, we would send the following body to the `/command` endpoint:
+
+    {
+        "op": "enable_behaviour",
+        "name": "blush",
+        "control": false
+    }
 
 
-## Installation
+The full list of available operations is the following:
 
-This projects runs on Python 3.9 with the following libraries:
+---
+- enable_behaviour
 
-- numpy
-- OpenCV (opencv-python)
-- mediapipe
+Description: control behaviours
 
-You can use the requirements.txt file provided in the repository using:
-    
-    pip install -r requirements.txt
-    
-Or you can execute the following pip commands on terminal:
+Expected params:
+
+    - <string> name
+    - <bool> control
+
+---
+- set_pan_torque
+
+Description: control pan torque
+
+Expected params:
+
+    - <bool> control
+
+---
+- set_pan
+
+Description: control pan angle
+
+Expected params:
+
+    - <float> angle
+
+---
+- set_tilt_torque
+
+Description: control tilt torque
+
+Expected params:
+
+    - <bool> control
+
+---
+- set_tilt
+
+Description: control tilt angle
+
+Expected params:
+
+    - <float> angle
+
+---
+- play_sound
+
+Description: play a sound from the robot's internal multimedia server
+
+Expected params:
+
+    - <string> name
+
+---
+- pause_audio
+
+Description: Pause sound playback
+
+Expected params:
+
+---
+- set_volume
+
+Description: control volume
+
+Expected params:
+
+    - <int> volume (0 ~ 100)
+
+---
+- start_recording
+
+Description: start recording audio. recording will be saved as mic.wav
+
+Expected params:
+
+---
+- stop_recording
+
+Description: stop recording audio
+
+Expected params:
+
+---
+- set_screen
+
+Description: update screen. Use this to set an image, play a video, show text, or load a website. send an empty object to clear.
+
+Expected params:
+
+    - <string> image (optional)
+    - <string> video (optional)
+    - <string> text (optional)
+    - <string> url (optional)
+
+---
+- update_leds
+
+Description: update led matrix. send a list of 13x13=169 colors. each color is a list of 3 (rgb components). row major ordering.
+
+Expected params:
+
+    - <list> colors
+
+---
+- update_leds_icon
+
+Description: load an icon to the led matrix using the robot's internal media server
+
+Expected params:
+
+    - <string> name
+
+---
+- reboot
+
+Description: reboot PC
+
+Expected params:
+
+---
+- shutdown
+
+Description: shutdown robot
+
+Expected params:
+
+
+## Python API
+
+The REST Api will only get you so far, eventually you may need to program new behaviours or drivers using the python sdk.
+
+The previous version of Elmo used ROS (Robot Operating System) as a middleware to exchange messages between different processes, as well as managing bringup and configuration.
+
+This version, however, uses a custom middleware, built on Redis (https://redis.io/).
+
+All drivers and behaviours use the classes defined in the module `src/middleware.py` to broadcast their state, exchange messages and load configuration parameters.
+
+The module `src/robot_api.py`, which exposes the REST Api used by the companion app is an excellent way to study how to implement new applications using the middleware library, since it accesses all low level capabilities of the robot.
+
+The behaviour modules can also serve as good examples.
+
+## Using the middleware library
+
+Most often you will be using the middleware library to access robot capabilities.
+
+You can do so using the several classes defined which extend the DBEntry class.
+
+Each of these classes defines a *fields* dictionary. The keys in this dictionary can be used as properties of the instance. Reading these properties or changing them will translate to a request to the underlying REDIS database. 
+
+For example, the module `src/driver_speakers.py` will update the *playing* field of it's instance of ***middleware.Speakers***. If you would like to know if sound is being played by the robot, you would run the following code:
+
+```python
+
+import middleware as mw
+speakers = mw.Speakers()
+is_playing = speakers.playing
 
 ```
-pip install numpy
-pip install opencv-python
-pip install mediapipe
+
+Conversely you could also update the *playing* field, if you wanted to develop new speaker drivers for instance.
+
+Some classes also expose methods to expand the logic without affecting the database. For example the Leds class has a ***load_from_url*** method, which will calculate the colors for the leds based on the loaded icon. The module `src/behaviour_change_mode.py`, which changes the led icon when the power button is pressed, has code similar to the following.
+
+```python
+
+import middleware as mw
+leds = mw.Leds()
+server = mw.Server()
+url = server.url_for_icon("music.png")
+leds.load_from_url(url)
+
 ```
 
-## Usage
-First navigate inside the driver state detection folder:
-    
-    cd driver_state_detection
+In the middleware library, there are classes that implement tools that allow other programs to signal themselves as **nodes**, allowing users (or other nodes) to monitor and control the state of the system.
 
-The scripts can be used with all default options and parameters by calling it via command line:
+## Using the middleware as a command line tool
 
-    python main.py
+By calling **middleware** from the command line you can monitor several aspects of the running nodes.
 
-For the list of possible arguments, write:
+```$ middleware```
 
-    python main.py --help
-
-Example of a possible use with parameters:
-
-    python main.py --ear_time_tresh 5
-
-This will sets to 5 seconds the eye closure time before a warning  message is shown on screen
-
-## Why this project
-This project was developed as part for a final group project for the course of [Computer Vision and Cognitive Systems](https://international.unimore.it/singleins.html?ID=295) done at the [University of Modena and Reggio Emilia](https://international.unimore.it/) in the second semester of the academic year 2020/2021.
-Given the possible applications of Computer Vision, we wanted to focus mainly on the automotive field, developing a useful and potential life saving proof of concept project.
-In fact, sadly, many fatal accidents happens [because of the driver distraction](https://www.nhtsa.gov/risky-driving/distracted-driving).
-
-## License and Contacts
-
-This project is freely available under the MIT license. You can use/modify this code as long as you include the original license present in this repository in it.
-
-For any question or if you want to contribute to this project, feel free to contact me or open a pull request.
-
-## Improvements to make
-- [x] Reformat code in packages
-- [x] Add argparser to run the script with various settings using the command line
-- [x] Improve robustness of gaze detection (using mediapipe)
-- [ ] Add argparser option for importing and using the camera matrix and dist. coefficients
-- [ ] Reformat classes to follow design patterns and Python conventions
-- [ ] Improve perfomances of the script by minimizing image processing steps
+```usage: python3 middleware.py <list|killall|shutdown|force_shutdown|state|monitor|reset>```
 
 
+- list -> list running nodes
+- killall -> gracefully shutdown all running nodes
+- shutdown -> gracefully shutdown a node
+- force_shutdown -> forcefully shutdown a node
+- state -> get a snapshot of the REDIS database. Pass additional arguments to filter by prefix
+- monitor -> get periodic snapshots of the REDIS database
+- reset -> clear the database
+
+## Scripts
+
+The bringup scripts are located inside the `scripts/folder`. A cronjob will launch them, edit by running the following command:
+
+```$ crontab -e```
